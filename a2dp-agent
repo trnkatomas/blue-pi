@@ -3,6 +3,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
+import subprocess
 import dbus
 import dbus.service
 import dbus.mainloop.glib
@@ -13,6 +14,18 @@ except ImportError:
 
 AGENT_INTERFACE = "org.bluez.Agent1"
 AGENT_PATH = "/test/agent"
+
+relevant_ifaces = [ AGENT_INTERFACE ]
+
+def property_changed(interface, changed, invalidated, path):
+	for name, value in changed.iteritems():
+		val = str(value)
+        media_interface = interface.startswith("org.bluez.MediaControl") and \
+                          interface.endswith("PropertyChanged")
+        if media_interface and name == "Connected" and value == 0:
+            print("Trying to stop a2dp-playback.service")
+            subprocess.check_call(["systemctl", "stop", "a2dp-playback.service"])    
+            print("a2dp-playback.service stopped")              
   
 class Rejected(dbus.DBusException):
         _dbus_error_name = "org.bluez.Error.Rejected"
@@ -36,6 +49,12 @@ class Agent(dbus.service.Object):
                 print("AuthorizeService (%s, %s)" % (device, uuid))
                 if uuid == "0000110d-0000-1000-8000-00805f9b34fb":
                     print("Authorized A2DP Service")
+                    print("Trying to stop MDP")
+                    subprocess.check_call(["mpc", "stop"])
+                    print("MDP stopped")
+                    print("Trying to start a2dp-playback.service")
+                    subprocess.check_call(["systemctl", "start", "a2dp-playback.service"])
+                    print("a2dp-playback.service stopped")
                     return
                 print("Rejecting non-A2DP Service")
                 raise Rejected("Connection rejected")
@@ -84,6 +103,11 @@ if __name__ == '__main__':
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
         bus = dbus.SystemBus()
+
+        bus.add_signal_receiver(property_changed, bus_name="org.bluez",
+			dbus_interface="org.freedesktop.DBus.Properties",
+			signal_name="PropertiesChanged",
+			path_keyword="path")
 
         agent = Agent(bus, AGENT_PATH)
 
