@@ -39,7 +39,7 @@ https://github.com/pauloborges/bluez/blob/master/test/monitor-bluetooth
 # A2DP-playback.service
 I did some minor tweeks for make it work on my particular setup, ie. changed the number of physical HW - the audio card, and added some random delays and buffers I found on the internet to shrink the delay is much as I could.
 
-# Conlusion
+# Conclusion
 In my particular case the whole thing is running on RPi 2 with RaspiDAC attached. The A2DP sink needs some fiddling for the buffering and I guess that the combination of rather slow RPi and external audio card make it even worse ¯\_(ツ)_/¯
 
 But in the end it's working and I can watch youtube videos or anything else on a big screen with decent sound.
